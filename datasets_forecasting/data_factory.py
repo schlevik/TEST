@@ -1,4 +1,4 @@
-from datasets_forecasting.data_loader import Dataset_Custom, Dataset_Pred, Dataset_TSF, Dataset_ETT_hour, Dataset_ETT_minute
+from datasets_forecasting.data_loader import Dataset_Custom, Dataset_Pred, Dataset_TSF, Dataset_ETT_hour, Dataset_ETT_minute, Dataset_M4
 from torch.utils.data import DataLoader
 import pandas as pd
 from einops import rearrange
@@ -8,6 +8,7 @@ data_dict = {
     'tsf_data': Dataset_TSF,
     'ett_h': Dataset_ETT_hour,
     'ett_m': Dataset_ETT_minute,
+    'm4': Dataset_M4
 }
 
 
@@ -38,20 +39,33 @@ def data_provider(config, flag, drop_last_test=True, train_all=False):
         drop_last = True
         batch_size = config['batch_size']
         freq = config['freq']
-
-    data_set = Data(
-        root_path=config['root_path'],
-        data_path=config['data_path'],
-        flag=flag,
-        size=[config['seq_len'], config['label_len'], config['pred_len']],
-        features=config['features'],
-        target=config['target'],
-        timeenc=timeenc,
-        freq=freq,
-        percent=percent,
-        max_len=max_len,
-        train_all=train_all
-    )
+    if config['data'] == 'm4':
+        drop_last = False
+        data_set = Data(
+            root_path=config['root_path'],
+            data_path=config['data_path'],
+            flag=flag,
+            size=[config['seq_len'], config['label_len'], config['pred_len']],
+            features=config['features'],
+            target=config['target'],
+            timeenc=timeenc,
+            freq=freq,
+            seasonal_patterns=config['seasonal_patterns']
+        )
+    else:
+        data_set = Data(
+            root_path=config['root_path'],
+            data_path=config['data_path'],
+            flag=flag,
+            size=[config['seq_len'], config['label_len'], config['pred_len']],
+            features=config['features'],
+            target=config['target'],
+            timeenc=timeenc,
+            freq=freq,
+            percent=percent,
+            max_len=max_len,
+            train_all=train_all
+        )
     print(flag, len(data_set))
     data_loader = DataLoader(
         data_set,
