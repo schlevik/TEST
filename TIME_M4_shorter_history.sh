@@ -4,15 +4,15 @@ train_epochs=50
 llama_layers=32
 batch_size=24
 learning_rate=0.001
-d_model=8
-d_ff=32
+d_model=768
+d_ff=768
 
 master_port=00097
 num_process=8
 
 comment='TimeLLM-M4'
 
-for season in Weekly Monthly Yearly Daily Quarterly Hourly; do 
+for season in Quarterly Yearly; do # Weekly Monthly Yearly Daily  Hourly;  
   python run_m4.py \
     --task_name short_term_forecast \
     --is_training 1 \
@@ -25,8 +25,6 @@ for season in Weekly Monthly Yearly Daily Quarterly Hourly; do
     --enc_in 1 \
     --dec_in 1 \
     --c_out 1 \
-    --d_model $d_model \
-    --d_ff $d_ff \
     --patch_len 1 \
     --stride 1 \
     --batch_size $batch_size \
@@ -41,7 +39,7 @@ for season in Weekly Monthly Yearly Daily Quarterly Hourly; do
     --n_heads 4 \
     --d_ff 768 \
     --freq 0 \
-    --patch_size 24 \
+    --patch_size 16 \
     --stride 2 \
     --gpt_layer 6 \
     --itr 3 \
