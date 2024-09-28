@@ -214,6 +214,7 @@ class Dataset_ETT_minute(Dataset):
 class Dataset_Custom(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='S', data_path='ETTh1.csv',
+                 aug='national_illness_168_gen_50ksteps_10k.npy',
                  target='OT', scale=True, timeenc=0, freq='h',
                  percent=10, max_len=-1, train_all=False):
         # size [seq_len, label_len, pred_len]
@@ -240,11 +241,13 @@ class Dataset_Custom(Dataset):
 
         self.root_path = root_path
         self.data_path = data_path
+        self.aug_path = aug
         self.__read_data__()
 
         self.enc_in = self.data_x.shape[-1]
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
 
+        
     def __read_data__(self):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
@@ -265,7 +268,10 @@ class Dataset_Custom(Dataset):
         border2s = [num_train, num_train + num_vali, len(df_raw)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
-
+        if self.aug_path and self.set_type == 0:
+            self.aug = np.load(self.aug_path).squeeze()
+        else:
+            self.aug = None
         if self.set_type == 0:
             border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
 
@@ -297,23 +303,49 @@ class Dataset_Custom(Dataset):
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
-
+        self.ds_len = (len(self.data_x) - self.seq_len - self.pred_len + 1) * self.data_x.shape[-1]
+        self.aug_num = len(self.aug) if self.aug is not None else 0
+        self.aug_len = self.aug.shape[1] if self.aug is not None else 0
+        print(self.aug_len, self.seq_len + self.label_len + self.pred_len)
+        if self.aug_len:
+            assert self.seq_len + self.label_len + self.pred_len <= self.aug_len
+        if self.set_type == 0:
+            assert self.aug_len
+        
     def __getitem__(self, index):
         feat_id = index // self.tot_len
         s_begin = index % self.tot_len
+        if s_begin < self.ds_len:
 
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
-        seq_x = self.data_x[s_begin:s_end, feat_id:feat_id + 1]
-        seq_y = self.data_y[r_begin:r_end, feat_id:feat_id + 1]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
+            s_end = s_begin + self.seq_len
+            r_begin = s_end - self.label_len
+            r_end = r_begin + self.label_len + self.pred_len
+            seq_x = self.data_x[s_begin:s_end, feat_id:feat_id + 1]
+            seq_y = self.data_y[r_begin:r_end, feat_id:feat_id + 1]
+            seq_x_mark = self.data_stamp[s_begin:s_end]
+            seq_y_mark = self.data_stamp[r_begin:r_end]
 
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
+            return seq_x, seq_y, seq_x_mark, seq_y_mark
+        else:
+            index -= self.ds_len
+            total_len = self.seq_len + self.label_len + self.pred_len
+            print(self.aug, self.set_type)
+            sampled_timeseries = self.aug[index]
+            s_begin = np.random.randint(low=0,
+                                      high=len(sampled_timeseries) - total_len,
+                                      size=1)[0]
 
+            s_end = s_begin + self.seq_len
+            r_begin = s_end - self.label_len
+            r_end = r_begin + self.label_len + self.pred_len
+            seq_x = sampled_timeseries[s_begin:s_end]
+            seq_y = sampled_timeseries[r_begin:r_end]
+            # seq_x_mark = self.data_stamp[s_begin:s_end]
+            # seq_y_mark = self.data_stamp[r_begin:r_end]
+            
+            return seq_x, seq_y, np.zeros(seq_x.shape).squeeze(), np.zeros(seq_y.shape).squeeze()
     def __len__(self):
-        return (len(self.data_x) - self.seq_len - self.pred_len + 1) * self.enc_in
+        return self.ds_len + self.aug_num
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
