@@ -32,7 +32,9 @@ python main_LLM4TS.py \
     --is_gpt 1 \
     --aug_only  1 \
     --output_dir ./experiments \
-    --gpu -1
+    --gpu -1 \
+    --aug ili-clo-0_256_gen_100repeat.npy \
+    --percent_aug -100
 
 done
 done

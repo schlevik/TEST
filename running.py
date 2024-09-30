@@ -54,7 +54,6 @@ def setup(args):
     Returns:
         config: configuration dictionary
     """
-
     config = args.__dict__  # configuration dictionary
 
     if args.config_filepath is not None:

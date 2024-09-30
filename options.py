@@ -182,7 +182,7 @@ class options_classification(object):
                                  'model and retrain the classifier')
         self.parser.add_argument('--encoder_save_path', type=str, metavar='PATH', default='./encoders/saved_models',
                             help='path where the estimator is/should be saved')
-
+       
 
 
     def parse(self):
@@ -271,6 +271,9 @@ class options_forecasting(object):
 
         self.parser.add_argument('--itr', type=int, default=3)
         self.parser.add_argument('--cos', type=int, default=1)
+        self.parser.add_argument('--percent_aug', type=int, default=100)
+        self.parser.add_argument('--aug', type=str, default=None)
+        self.parser.add_argument('--aug_only', type=int, default=1)
 
 
         # text prototype

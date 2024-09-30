@@ -52,6 +52,24 @@ def data_provider(config, flag, drop_last_test=True, train_all=False):
             freq=freq,
             seasonal_patterns=config['seasonal_patterns']
         )
+    elif 'aug' in config:
+        print("Data aug...")
+        data_set = Data(
+            root_path=config['root_path'],
+            data_path=config['data_path'],
+            flag=flag,
+            size=[config['seq_len'], config['label_len'], config['pred_len']],
+            features=config['features'],
+            target=config['target'],
+            timeenc=timeenc,
+            freq=freq,
+            percent=percent,
+            max_len=max_len,
+            train_all=train_all,
+            percent_aug=config['percent_aug'],
+            aug=config['aug'],
+            aug_only=config['aug_only']
+        )
     else:
         data_set = Data(
             root_path=config['root_path'],
@@ -64,7 +82,7 @@ def data_provider(config, flag, drop_last_test=True, train_all=False):
             freq=freq,
             percent=percent,
             max_len=max_len,
-            train_all=train_all
+            train_all=train_all,
         )
     print(flag, len(data_set))
     data_loader = DataLoader(
